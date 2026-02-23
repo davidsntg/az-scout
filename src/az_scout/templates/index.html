@@ -1,531 +1,633 @@
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Azure Scout</title>
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='img/favicon.svg') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
-          integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Tabler Core CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css">
+    <!-- Tabler Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+    <!-- Simple DataTables -->
     <link href="https://cdn.jsdelivr.net/npm/simple-datatables@9/dist/style.css" rel="stylesheet">
+    <!-- Custom styles -->
     <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+    <!-- D3.js -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
-<body class="d-flex flex-column min-vh-100">
 
-<!-- ===== Navbar ===== -->
-<nav class="navbar navbar-expand-sm bg-body-tertiary border-bottom">
-    <div class="container-fluid">
-        <a class="navbar-brand d-flex align-items-center gap-2" href="#">
-            <img src="{{ url_for('static', path='img/favicon.svg') }}" width="26" height="26" alt="">
-            <span>Azure Scout</span>
-        </a>
-        <div class="d-flex align-items-center gap-2">
-            {% if auth_user %}
-            <span class="text-body-secondary small d-flex align-items-center gap-1" title="Signed in as {{ auth_user }}">
-                <i class="bi bi-person-circle"></i> {{ auth_user }}
-            </span>
-            <a href="/.auth/logout" class="btn btn-sm btn-outline-secondary" title="Sign out">
-                <i class="bi bi-box-arrow-right"></i>
-            </a>
-            {% endif %}
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
-                <i class="bi bi-moon-fill" id="icon-dark"></i>
-                <i class="bi bi-sun-fill d-none" id="icon-light"></i>
-            </button>
-            <a href="https://github.com/lrivallain/az-scout" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary" title="GitHub">
-                <i class="bi bi-github"></i>
-            </a>
-        </div>
-    </div>
-</nav>
+<body class="layout-fluid">
+    <div class="page">
 
-<!-- ===== Main content ===== -->
-<div class="container-fluid mt-3 flex-grow-1 overflow-auto pb-4">
-
-    <!-- Shared selectors: Tenant + Region -->
-    <div class="row mb-2 g-2 align-items-center" id="selector-bar">
-        <div class="col-auto" id="tenant-section">
-            <div class="input-group input-group-sm">
-                <span class="input-group-text"><i class="bi bi-shield-lock"></i> Tenant</span>
-                <select class="form-select form-select-sm" id="tenant-select" style="max-width:320px;">
-                    <option value="">Loading tenants…</option>
-                </select>
-            </div>
-        </div>
-        <div class="col-auto">
-            <div class="position-relative" id="region-combobox">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text"><i class="bi bi-geo-alt"></i> Region</span>
-                    <input type="search" class="form-control form-control-sm" id="region-search"
-                           placeholder="Loading regions…" autocomplete="off" spellcheck="false" disabled
-                           style="min-width:240px;">
+        <!-- ===== Vertical sidebar ===== -->
+        <aside class="navbar navbar-vertical navbar-expand-lg" data-bs-theme="dark">
+            <div class="container-fluid">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu"
+                    aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <h1 class="navbar-brand navbar-brand-autodark">
+                    <a href="#">
+                        <img src="{{ url_for('static', path='img/favicon.svg') }}" width="26" height="26" alt=""
+                            class="navbar-brand-image">
+                        Azure Scout
+                    </a>
+                </h1>
+                <div class="collapse navbar-collapse" id="sidebar-menu">
+                    <ul class="navbar-nav pt-lg-3" id="mainTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" id="topology-tab" data-bs-toggle="tab" href="#tab-topology"
+                                role="tab" aria-controls="tab-topology" aria-selected="true">
+                                <span class="nav-link-icon"><i class="ti ti-topology-star-3"></i></span>
+                                <span class="nav-link-title">AZ Topology</span>
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="planner-tab" data-bs-toggle="tab" href="#tab-planner" role="tab"
+                                aria-controls="tab-planner" aria-selected="false">
+                                <span class="nav-link-icon"><i class="ti ti-layout-grid"></i></span>
+                                <span class="nav-link-title">Deployment Planner</span>
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="strategy-tab" data-bs-toggle="tab" href="#tab-strategy" role="tab"
+                                aria-controls="tab-strategy" aria-selected="false">
+                                <span class="nav-link-icon"><i class="ti ti-compass"></i></span>
+                                <span class="nav-link-title">Strategy Advisor</span>
+                            </a>
+                        </li>
+                    </ul>
                 </div>
-                <input type="hidden" id="region-select" value="">
-                <ul class="dropdown-menu w-100" id="region-dropdown"></ul>
             </div>
-        </div>
-    </div>
+        </aside>
 
-    <!-- Tabs -->
-    <ul class="nav nav-tabs" id="mainTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="topology-tab" data-bs-toggle="tab" data-bs-target="#tab-topology"
-                    type="button" role="tab" aria-controls="tab-topology" aria-selected="true">
-                <i class="bi bi-diagram-3"></i> AZ Topology
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="planner-tab" data-bs-toggle="tab" data-bs-target="#tab-planner"
-                    type="button" role="tab" aria-controls="tab-planner" aria-selected="false">
-                <i class="bi bi-grid-3x3-gap"></i> Deployment Planner
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="strategy-tab" data-bs-toggle="tab" data-bs-target="#tab-strategy"
-                    type="button" role="tab" aria-controls="tab-strategy" aria-selected="false">
-                <i class="bi bi-compass"></i> Strategy Advisor
-            </button>
-        </li>
-    </ul>
+        <!-- ===== Page wrapper ===== -->
+        <div class="page-wrapper">
 
-    <div class="tab-content" id="mainTabContent">
-
-        <!-- ====== AZ Topology Tab ====== -->
-        <div class="tab-pane fade show active" id="tab-topology" role="tabpanel" aria-labelledby="topology-tab">
-            <div class="card border-top-0 rounded-top-0">
-                <div class="card-body">
-                    <div class="row g-3">
-                        <!-- Left sidebar: subscriptions -->
-                        <div class="col-md-3 col-xl-2">
-                            <div class="topo-sidebar">
-                                <label class="form-label form-label-sm mb-1">
-                                    <i class="bi bi-collection"></i> Subscriptions
-                                </label>
-                                <div class="input-group input-group-sm mb-1">
-                                    <input type="search" class="form-control" id="topo-sub-filter"
-                                           placeholder="Filter…" autocomplete="off" spellcheck="false">
-                                    <button type="button" class="btn btn-outline-secondary" onclick="topoSelectAllVisible()" title="Select visible">
-                                        <i class="bi bi-check-all"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-outline-secondary" onclick="topoDeselectAll()" title="Clear all">
-                                        <i class="bi bi-x-lg"></i>
-                                    </button>
+            <!-- ===== Page header ===== -->
+            <div class="page-header d-print-none">
+                <div class="container-fluid">
+                    <div class="row g-2 align-items-center">
+                        <!-- Shared selectors: Tenant + Region -->
+                        <div class="col" id="selector-bar">
+                            <div class="row g-2 align-items-center">
+                                <div class="col-auto" id="tenant-section">
+                                    <div class="input-group input-group-sm input-group-flat">
+                                        <span class="input-group-text"><i class="ti ti-shield-lock"></i>
+                                            Tenant</span>
+                                        <select class="form-select form-select-sm" id="tenant-select"
+                                            style="max-width:320px;">
+                                            <option value="">Loading tenants…</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div id="topo-sub-list" class="subscription-checklist"></div>
-                                <div class="d-flex justify-content-between align-items-center mt-2">
-                                    <small class="text-body-secondary" id="topo-sub-count">0 selected</small>
-                                    <button type="button" class="btn btn-primary btn-sm" id="topo-load-btn" onclick="loadMappings()" disabled>
-                                        <i class="bi bi-arrow-repeat"></i> Load
-                                    </button>
+                                <div class="col-auto">
+                                    <div class="position-relative" id="region-combobox">
+                                        <div class="input-group input-group-sm input-group-flat">
+                                            <span class="input-group-text"><i class="ti ti-map-pin"></i>
+                                                Region</span>
+                                            <input type="search" class="form-control form-control-sm"
+                                                id="region-search" placeholder="Loading regions…" autocomplete="off"
+                                                spellcheck="false" disabled style="min-width:240px;">
+                                        </div>
+                                        <input type="hidden" id="region-select" value="">
+                                        <ul class="dropdown-menu w-100" id="region-dropdown"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Right-side actions -->
+                        <div class="col-auto ms-auto d-flex align-items-center gap-1">
+                            {% if auth_user %}
+                            <span class="text-secondary small d-flex align-items-center gap-1 me-1"
+                                title="Signed in as {{ auth_user }}">
+                                <i class="ti ti-user-circle"></i> {{ auth_user }}
+                            </span>
+                            <a href="/.auth/logout" class="btn btn-icon btn-ghost-secondary btn-sm" title="Sign out">
+                                <i class="ti ti-logout"></i>
+                            </a>
+                            {% endif %}
+                            <button type="button" class="btn btn-icon btn-ghost-secondary btn-sm" id="theme-toggle"
+                                onclick="toggleTheme()" title="Toggle dark/light mode">
+                                <i class="ti ti-moon-filled" id="icon-dark"></i>
+                                <i class="ti ti-sun-filled d-none" id="icon-light"></i>
+                            </button>
+                            <a href="https://github.com/lrivallain/az-scout" target="_blank" rel="noopener"
+                                class="btn btn-icon btn-ghost-secondary btn-sm" title="GitHub">
+                                <i class="ti ti-brand-github"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page-body">
+                <div class="container-fluid">
+                    <div class="tab-content" id="mainTabContent">
+
+                        <!-- ====== AZ Topology Tab ====== -->
+                        <div class="tab-pane fade show active" id="tab-topology" role="tabpanel"
+                            aria-labelledby="topology-tab">
+                            <div class="row g-3">
+                                <!-- Left sidebar: subscriptions -->
+                                <div class="col-md-3 col-xl-2">
+                                    <div class="topo-sidebar">
+                                        <label class="form-label form-label-sm mb-1">
+                                            <i class="ti ti-stack-2"></i> Subscriptions
+                                        </label>
+                                        <div class="input-group input-group-sm mb-1">
+                                            <input type="search" class="form-control" id="topo-sub-filter"
+                                                placeholder="Filter…" autocomplete="off" spellcheck="false">
+                                            <button type="button" class="btn btn-outline-secondary"
+                                                onclick="topoSelectAllVisible()" title="Select visible">
+                                                <i class="ti ti-checks"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary"
+                                                onclick="topoDeselectAll()" title="Clear all">
+                                                <i class="ti ti-x"></i>
+                                            </button>
+                                        </div>
+                                        <div id="topo-sub-list" class="subscription-checklist"></div>
+                                        <div class="d-flex justify-content-between align-items-center mt-2">
+                                            <small class="text-secondary" id="topo-sub-count">0 selected</small>
+                                            <button type="button" class="btn btn-primary btn-sm" id="topo-load-btn"
+                                                onclick="loadMappings()" disabled>
+                                                <i class="ti ti-refresh"></i> Load
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Right content: results -->
+                                <div class="col-md-9 col-xl-10">
+                                    <!-- Error -->
+                                    <div id="topo-error" class="alert alert-danger alert-sm d-none" role="alert"></div>
+
+                                    <!-- Empty state -->
+                                    <div id="topo-empty" class="empty">
+                                        <div class="empty-icon">
+                                            <i class="ti ti-topology-star-3" style="font-size:3rem;"></i>
+                                        </div>
+                                        <p class="empty-title">AZ Topology</p>
+                                        <p class="empty-subtitle text-secondary">
+                                            Select subscriptions and click <strong>Load</strong>.
+                                        </p>
+                                    </div>
+
+                                    <!-- Loading -->
+                                    <div id="topo-loading" class="text-center py-5 d-none">
+                                        <div class="spinner-border text-primary" role="status"></div>
+                                        <p class="mt-2 text-secondary">Fetching zone mappings…</p>
+                                    </div>
+
+                                    <!-- Results -->
+                                    <div id="topo-results" class="d-none">
+                                        <!-- Graph -->
+                                        <div class="card mb-3">
+                                            <div class="card-header">
+                                                <h3 class="card-title">
+                                                    <i class="ti ti-topology-star-3 me-1"></i> Zone Mapping
+                                                    Graph
+                                                </h3>
+                                                <div class="card-actions">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                        onclick="exportGraphPNG()" title="Export as PNG">
+                                                        <i class="ti ti-download"></i> PNG
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="card-body">
+                                                <div id="graph-container" class="graph-container mx-auto"></div>
+                                                <div id="graph-legend"
+                                                    class="d-flex flex-wrap gap-3 mt-2 justify-content-center">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Table -->
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h3 class="card-title">
+                                                    <i class="ti ti-table me-1"></i> Zone Mapping Table
+                                                </h3>
+                                                <div class="card-actions">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                        onclick="exportTableCSV()" title="Export as CSV">
+                                                        <i class="ti ti-download"></i> CSV
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="card-body">
+                                                <div id="table-container" class="table-responsive"></div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Right content: results -->
-                        <div class="col-md-9 col-xl-10">
+                        <!-- ====== Deployment Planner Tab ====== -->
+                        <div class="tab-pane fade" id="tab-planner" role="tabpanel" aria-labelledby="planner-tab">
+                            <!-- Controls row -->
+                            <div class="row g-2 align-items-end mb-3">
+                                <div class="col-md-3 col-lg-3">
+                                    <label for="planner-sub-search" class="form-label form-label-sm mb-1">
+                                        <i class="ti ti-stack-2"></i> Subscription
+                                    </label>
+                                    <div class="position-relative" id="planner-sub-combobox">
+                                        <input type="search" class="form-control form-control-sm"
+                                            id="planner-sub-search" placeholder="Loading subscriptions…"
+                                            autocomplete="off" spellcheck="false" disabled>
+                                        <input type="hidden" id="planner-sub-select" value="">
+                                        <ul class="dropdown-menu w-100" id="planner-sub-dropdown"></ul>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <select class="form-select form-select-sm" id="planner-currency" title="Currency"
+                                        style="width:80px;">
+                                        <option value="USD" selected>USD</option>
+                                        <option value="EUR">EUR</option>
+                                        <option value="GBP">GBP</option>
+                                        <option value="JPY">JPY</option>
+                                        <option value="AUD">AUD</option>
+                                        <option value="CAD">CAD</option>
+                                        <option value="CHF">CHF</option>
+                                        <option value="SEK">SEK</option>
+                                        <option value="BRL">BRL</option>
+                                        <option value="INR">INR</option>
+                                    </select>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-primary btn-sm" id="planner-load-btn"
+                                        onclick="loadSkus()" disabled>
+                                        <i class="ti ti-refresh"></i> Load SKUs
+                                    </button>
+                                </div>
+                                <div class="col d-none" id="planner-csv-btn">
+                                    <div class="d-flex justify-content-end gap-2 align-items-center">
+                                        <div class="form-check form-switch mb-0">
+                                            <input class="form-check-input" type="checkbox" id="planner-show-spot"
+                                                checked onchange="toggleTableColumns()">
+                                            <label class="form-check-label small" for="planner-show-spot">Spot</label>
+                                        </div>
+                                        <div class="form-check form-switch mb-0">
+                                            <input class="form-check-input" type="checkbox" id="planner-show-prices"
+                                                checked onchange="toggleTableColumns()">
+                                            <label class="form-check-label small"
+                                                for="planner-show-prices">Prices</label>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                            onclick="exportSkuCSV()" title="Export as CSV">
+                                            <i class="ti ti-download"></i> CSV
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Error -->
-                            <div id="topo-error" class="alert alert-danger alert-sm d-none" role="alert"></div>
+                            <div id="planner-error" class="alert alert-danger alert-sm d-none" role="alert">
+                            </div>
 
                             <!-- Empty state -->
-                            <div id="topo-empty" class="text-center text-body-secondary py-5">
-                                <i class="bi bi-diagram-3 fs-1 d-block mb-2"></i>
-                                <p>Select subscriptions and click <strong>Load</strong>.</p>
+                            <div id="planner-empty" class="empty">
+                                <div class="empty-icon">
+                                    <i class="ti ti-layout-grid" style="font-size:3rem;"></i>
+                                </div>
+                                <p class="empty-title">Deployment Planner</p>
+                                <p class="empty-subtitle text-secondary">
+                                    Select a subscription, then click <strong>Load SKUs</strong>.
+                                </p>
                             </div>
 
                             <!-- Loading -->
-                            <div id="topo-loading" class="text-center py-5 d-none">
+                            <div id="planner-loading" class="text-center py-5 d-none">
                                 <div class="spinner-border text-primary" role="status"></div>
-                                <p class="mt-2 text-body-secondary">Fetching zone mappings…</p>
+                                <p class="mt-2 text-secondary">Fetching SKU data…</p>
+                            </div>
+
+                            <!-- SKU results -->
+                            <div id="planner-results" class="d-none">
+                                <div id="region-summary" class="d-none"></div>
+                                <div id="sku-table-container"></div>
+                            </div>
+                        </div>
+
+                        <!-- ====== Strategy Advisor Tab ====== -->
+                        <div class="tab-pane fade" id="tab-strategy" role="tabpanel"
+                            aria-labelledby="strategy-tab">
+                            <form id="strategy-form" onsubmit="submitStrategy(event)">
+                                <div class="row g-3">
+                                    <!-- Workload name -->
+                                    <div class="col-md-4">
+                                        <label for="strat-workload-name"
+                                            class="form-label form-label-sm">Workload name</label>
+                                        <input type="text" class="form-control form-control-sm"
+                                            id="strat-workload-name" placeholder="e.g. inference-cluster" required>
+                                    </div>
+                                    <!-- Subscription -->
+                                    <div class="col-md-4">
+                                        <label for="strat-sub-search" class="form-label form-label-sm">
+                                            <i class="ti ti-stack-2"></i> Subscription
+                                        </label>
+                                        <div class="position-relative" id="strat-sub-combobox">
+                                            <input type="search" class="form-control form-control-sm"
+                                                id="strat-sub-search" placeholder="Select subscription…"
+                                                autocomplete="off" spellcheck="false">
+                                            <input type="hidden" id="strat-sub-select" value="">
+                                            <ul class="dropdown-menu w-100" id="strat-sub-dropdown"></ul>
+                                        </div>
+                                    </div>
+                                    <!-- SKU -->
+                                    <div class="col-md-4">
+                                        <label for="strat-sku" class="form-label form-label-sm">Preferred SKU
+                                            (optional)</label>
+                                        <input type="text" class="form-control form-control-sm" id="strat-sku"
+                                            placeholder="e.g. Standard_D2s_v3">
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mt-1">
+                                    <div class="col-md-2">
+                                        <label for="strat-instances"
+                                            class="form-label form-label-sm">Instances</label>
+                                        <input type="number" class="form-control form-control-sm" id="strat-instances"
+                                            value="1" min="1">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="strat-gpu" class="form-label form-label-sm">Total
+                                            GPUs</label>
+                                        <input type="number" class="form-control form-control-sm" id="strat-gpu"
+                                            min="0" placeholder="0">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="strat-residency" class="form-label form-label-sm">Data
+                                            residency</label>
+                                        <select class="form-select form-select-sm" id="strat-residency">
+                                            <option value="">ANY</option>
+                                            <option value="FR">FR</option>
+                                            <option value="EU">EU</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="strat-statefulness"
+                                            class="form-label form-label-sm">Statefulness</label>
+                                        <select class="form-select form-select-sm" id="strat-statefulness">
+                                            <option value="stateless" selected>Stateless</option>
+                                            <option value="soft-state">Soft-state</option>
+                                            <option value="stateful">Stateful</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="strat-latency-sens" class="form-label form-label-sm">Latency
+                                            sensitivity</label>
+                                        <select class="form-select form-select-sm" id="strat-latency-sens">
+                                            <option value="low">Low</option>
+                                            <option value="medium" selected>Medium</option>
+                                            <option value="high">High</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="strat-cross-traffic"
+                                            class="form-label form-label-sm">Cross-region traffic</label>
+                                        <select class="form-select form-select-sm" id="strat-cross-traffic">
+                                            <option value="low" selected>Low</option>
+                                            <option value="medium">Medium</option>
+                                            <option value="heavy">Heavy</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mt-1">
+                                    <div class="col-md-2">
+                                        <label for="strat-urgency"
+                                            class="form-label form-label-sm">Urgency</label>
+                                        <select class="form-select form-select-sm" id="strat-urgency">
+                                            <option value="this_week" selected>This week</option>
+                                            <option value="today">Today</option>
+                                            <option value="now">Now</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="strat-currency"
+                                            class="form-label form-label-sm">Currency</label>
+                                        <select class="form-select form-select-sm" id="strat-currency">
+                                            <option value="USD" selected>USD</option>
+                                            <option value="EUR">EUR</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-check mt-4">
+                                            <input class="form-check-input" type="checkbox" id="strat-prefer-spot">
+                                            <label class="form-check-label small" for="strat-prefer-spot">Prefer
+                                                Spot</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="strat-budget" class="form-label form-label-sm">Max hourly
+                                            budget</label>
+                                        <input type="number" class="form-control form-control-sm" id="strat-budget"
+                                            min="0" step="0.01" placeholder="None">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="strat-max-rtt" class="form-label form-label-sm">Max RTT
+                                            (ms)</label>
+                                        <input type="number" class="form-control form-control-sm" id="strat-max-rtt"
+                                            min="0" placeholder="None">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-check mt-4">
+                                            <input class="form-check-input" type="checkbox" id="strat-require-zonal">
+                                            <label class="form-check-label small" for="strat-require-zonal">Require
+                                                zonal</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3 d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary btn-sm" id="strat-submit-btn">
+                                        <i class="ti ti-compass"></i> Generate Strategy
+                                    </button>
+                                </div>
+                            </form>
+
+                            <!-- Error -->
+                            <div id="strategy-error" class="alert alert-danger alert-sm d-none mt-3" role="alert">
+                            </div>
+
+                            <!-- Loading -->
+                            <div id="strategy-loading" class="text-center py-5 d-none">
+                                <div class="spinner-border text-primary" role="status"></div>
+                                <p class="mt-2 text-secondary">Computing capacity strategy…</p>
                             </div>
 
                             <!-- Results -->
-                            <div id="topo-results" class="d-none">
-                                <!-- Graph -->
+                            <div id="strategy-results" class="d-none mt-3">
+                                <!-- Summary cards -->
+                                <div class="row g-3 mb-3" id="strategy-summary-cards"></div>
+
+                                <!-- Business explanation -->
                                 <div class="card mb-3">
-                                    <div class="card-header d-flex justify-content-between align-items-center">
-                                        <span><i class="bi bi-diagram-3"></i> Zone Mapping Graph</span>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportGraphPNG()" title="Export as PNG">
-                                            <i class="bi bi-download"></i> PNG
-                                        </button>
+                                    <div class="card-header">
+                                        <h3 class="card-title">
+                                            <i class="ti ti-briefcase me-1"></i> Business View
+                                        </h3>
                                     </div>
-                                    <div class="card-body">
-                                        <div id="graph-container" class="graph-container mx-auto"></div>
-                                        <div id="graph-legend" class="d-flex flex-wrap gap-3 mt-2 justify-content-center"></div>
+                                    <div class="card-body" id="strategy-business"></div>
+                                </div>
+
+                                <!-- Technical details -->
+                                <div class="accordion" id="strategy-tech-accordion">
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header">
+                                            <button class="accordion-button collapsed" type="button"
+                                                data-bs-toggle="collapse" data-bs-target="#strategy-tech-body">
+                                                <i class="ti ti-settings me-2"></i> Technical Details
+                                            </button>
+                                        </h2>
+                                        <div id="strategy-tech-body" class="accordion-collapse collapse">
+                                            <div class="accordion-body" id="strategy-technical"></div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- Table -->
-                                <div class="card">
-                                    <div class="card-header d-flex justify-content-between align-items-center">
-                                        <span><i class="bi bi-table"></i> Zone Mapping Table</span>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportTableCSV()" title="Export as CSV">
-                                            <i class="bi bi-download"></i> CSV
-                                        </button>
-                                    </div>
-                                    <div class="card-body">
-                                        <div id="table-container" class="table-responsive"></div>
-                                    </div>
+                                <!-- Warnings -->
+                                <div id="strategy-warnings" class="mt-3"></div>
+
+                                <!-- Disclaimer -->
+                                <div class="alert alert-secondary mt-3 small" role="alert">
+                                    <i class="ti ti-info-circle"></i>
+                                    This tool is not affiliated with Microsoft.
+                                    All capacity, pricing and latency information are indicative
+                                    and not a guarantee of deployment success.
                                 </div>
                             </div>
+                        </div>
+
+                    </div><!-- /tab-content -->
+                </div><!-- /container-fluid -->
+            </div><!-- /page-body -->
+
+            <!-- ===== Footer ===== -->
+            <footer class="footer footer-transparent d-print-none">
+                <div class="container-fluid">
+                    <div class="row text-center align-items-center">
+                        <div class="col-12">
+                            <span>v{{ version }}</span> ·
+                            <span>MIT License</span> ·
+                            <span>Independent Azure analysis tool — not affiliated with Microsoft.</span>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </footer>
+        </div><!-- /page-wrapper -->
+    </div><!-- /page -->
 
-        <!-- ====== Deployment Planner Tab ====== -->
-        <div class="tab-pane fade" id="tab-planner" role="tabpanel" aria-labelledby="planner-tab">
-            <div class="card border-top-0 rounded-top-0">
-                <div class="card-body">
-                    <!-- Controls row -->
-                    <div class="row g-2 align-items-end mb-3">
-                        <div class="col-md-3 col-lg-3">
-                            <label for="planner-sub-search" class="form-label form-label-sm mb-1">
-                                <i class="bi bi-collection"></i> Subscription
-                            </label>
-                            <div class="position-relative" id="planner-sub-combobox">
-                                <input type="search" class="form-control form-control-sm" id="planner-sub-search"
-                                       placeholder="Loading subscriptions…" autocomplete="off" spellcheck="false" disabled>
-                                <input type="hidden" id="planner-sub-select" value="">
-                                <ul class="dropdown-menu w-100" id="planner-sub-dropdown"></ul>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <select class="form-select form-select-sm" id="planner-currency" title="Currency" style="width:80px;">
-                                <option value="USD" selected>USD</option>
-                                <option value="EUR">EUR</option>
-                                <option value="GBP">GBP</option>
-                                <option value="JPY">JPY</option>
-                                <option value="AUD">AUD</option>
-                                <option value="CAD">CAD</option>
-                                <option value="CHF">CHF</option>
-                                <option value="SEK">SEK</option>
-                                <option value="BRL">BRL</option>
-                                <option value="INR">INR</option>
-                            </select>
-                        </div>
-                        <div class="col-auto">
-                            <button type="button" class="btn btn-primary btn-sm" id="planner-load-btn" onclick="loadSkus()" disabled>
-                                <i class="bi bi-arrow-repeat"></i> Load SKUs
-                            </button>
-                        </div>
-                        <div class="col d-none" id="planner-csv-btn">
-                            <div class="d-flex justify-content-end gap-2 align-items-center">
-                                <div class="form-check form-switch mb-0">
-                                    <input class="form-check-input" type="checkbox" id="planner-show-spot" checked onchange="toggleTableColumns()">
-                                    <label class="form-check-label small" for="planner-show-spot">Spot</label>
-                                </div>
-                                <div class="form-check form-switch mb-0">
-                                    <input class="form-check-input" type="checkbox" id="planner-show-prices" checked onchange="toggleTableColumns()">
-                                    <label class="form-check-label small" for="planner-show-prices">Prices</label>
-                                </div>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportSkuCSV()" title="Export as CSV">
-                                    <i class="bi bi-download"></i> CSV
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Error -->
-                    <div id="planner-error" class="alert alert-danger alert-sm d-none" role="alert"></div>
-
-                    <!-- Empty state -->
-                    <div id="planner-empty" class="text-center text-body-secondary py-5">
-                        <i class="bi bi-grid-3x3-gap fs-1 d-block mb-2"></i>
-                        <p>Select a subscription, then click <strong>Load SKUs</strong>.</p>
-                    </div>
-
-                    <!-- Loading -->
-                    <div id="planner-loading" class="text-center py-5 d-none">
-                        <div class="spinner-border text-primary" role="status"></div>
-                        <p class="mt-2 text-body-secondary">Fetching SKU data…</p>
-                    </div>
-
-                    <!-- SKU results -->
-                    <div id="planner-results" class="d-none">
-                        <div id="region-summary" class="d-none"></div>
-                        <div id="sku-table-container"></div>
-                    </div>
+    <!-- ===== Spot Score Modal ===== -->
+    <div class="modal modal-blur fade" id="spotModal" tabindex="-1" aria-labelledby="spotModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="spotModalLabel">Spot Placement Score</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-            </div>
-        </div>
-
-        <!-- ====== Strategy Advisor Tab ====== -->
-        <div class="tab-pane fade" id="tab-strategy" role="tabpanel" aria-labelledby="strategy-tab">
-            <div class="card border-top-0 rounded-top-0">
-                <div class="card-body">
-                    <form id="strategy-form" onsubmit="submitStrategy(event)">
-                        <div class="row g-3">
-                            <!-- Workload name -->
-                            <div class="col-md-4">
-                                <label for="strat-workload-name" class="form-label form-label-sm">Workload name</label>
-                                <input type="text" class="form-control form-control-sm" id="strat-workload-name"
-                                       placeholder="e.g. inference-cluster" required>
-                            </div>
-                            <!-- Subscription -->
-                            <div class="col-md-4">
-                                <label for="strat-sub-search" class="form-label form-label-sm">
-                                    <i class="bi bi-collection"></i> Subscription
-                                </label>
-                                <div class="position-relative" id="strat-sub-combobox">
-                                    <input type="search" class="form-control form-control-sm" id="strat-sub-search"
-                                           placeholder="Select subscription…" autocomplete="off" spellcheck="false">
-                                    <input type="hidden" id="strat-sub-select" value="">
-                                    <ul class="dropdown-menu w-100" id="strat-sub-dropdown"></ul>
-                                </div>
-                            </div>
-                            <!-- SKU -->
-                            <div class="col-md-4">
-                                <label for="strat-sku" class="form-label form-label-sm">Preferred SKU (optional)</label>
-                                <input type="text" class="form-control form-control-sm" id="strat-sku"
-                                       placeholder="e.g. Standard_D2s_v3">
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mt-1">
-                            <div class="col-md-2">
-                                <label for="strat-instances" class="form-label form-label-sm">Instances</label>
-                                <input type="number" class="form-control form-control-sm" id="strat-instances" value="1" min="1">
-                            </div>
-                            <div class="col-md-2">
-                                <label for="strat-gpu" class="form-label form-label-sm">Total GPUs</label>
-                                <input type="number" class="form-control form-control-sm" id="strat-gpu" min="0" placeholder="0">
-                            </div>
-                            <div class="col-md-2">
-                                <label for="strat-residency" class="form-label form-label-sm">Data residency</label>
-                                <select class="form-select form-select-sm" id="strat-residency">
-                                    <option value="">ANY</option>
-                                    <option value="FR">FR</option>
-                                    <option value="EU">EU</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label for="strat-statefulness" class="form-label form-label-sm">Statefulness</label>
-                                <select class="form-select form-select-sm" id="strat-statefulness">
-                                    <option value="stateless" selected>Stateless</option>
-                                    <option value="soft-state">Soft-state</option>
-                                    <option value="stateful">Stateful</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label for="strat-latency-sens" class="form-label form-label-sm">Latency sensitivity</label>
-                                <select class="form-select form-select-sm" id="strat-latency-sens">
-                                    <option value="low">Low</option>
-                                    <option value="medium" selected>Medium</option>
-                                    <option value="high">High</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label for="strat-cross-traffic" class="form-label form-label-sm">Cross-region traffic</label>
-                                <select class="form-select form-select-sm" id="strat-cross-traffic">
-                                    <option value="low" selected>Low</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="heavy">Heavy</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mt-1">
-                            <div class="col-md-2">
-                                <label for="strat-urgency" class="form-label form-label-sm">Urgency</label>
-                                <select class="form-select form-select-sm" id="strat-urgency">
-                                    <option value="this_week" selected>This week</option>
-                                    <option value="today">Today</option>
-                                    <option value="now">Now</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label for="strat-currency" class="form-label form-label-sm">Currency</label>
-                                <select class="form-select form-select-sm" id="strat-currency">
-                                    <option value="USD" selected>USD</option>
-                                    <option value="EUR">EUR</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-check mt-4">
-                                    <input class="form-check-input" type="checkbox" id="strat-prefer-spot">
-                                    <label class="form-check-label small" for="strat-prefer-spot">Prefer Spot</label>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <label for="strat-budget" class="form-label form-label-sm">Max hourly budget</label>
-                                <input type="number" class="form-control form-control-sm" id="strat-budget" min="0" step="0.01" placeholder="None">
-                            </div>
-                            <div class="col-md-2">
-                                <label for="strat-max-rtt" class="form-label form-label-sm">Max RTT (ms)</label>
-                                <input type="number" class="form-control form-control-sm" id="strat-max-rtt" min="0" placeholder="None">
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-check mt-4">
-                                    <input class="form-check-input" type="checkbox" id="strat-require-zonal">
-                                    <label class="form-check-label small" for="strat-require-zonal">Require zonal</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mt-3 d-flex gap-2">
-                            <button type="submit" class="btn btn-primary btn-sm" id="strat-submit-btn">
-                                <i class="bi bi-compass"></i> Generate Strategy
-                            </button>
-                        </div>
-                    </form>
-
-                    <!-- Error -->
-                    <div id="strategy-error" class="alert alert-danger alert-sm d-none mt-3" role="alert"></div>
-
-                    <!-- Loading -->
-                    <div id="strategy-loading" class="text-center py-5 d-none">
-                        <div class="spinner-border text-primary" role="status"></div>
-                        <p class="mt-2 text-body-secondary">Computing capacity strategy…</p>
+                <div class="modal-body">
+                    <p class="fw-semibold mb-2" id="spot-modal-sku"></p>
+                    <label for="spot-modal-instances" class="form-label small">Number of instances:</label>
+                    <input type="number" class="form-control form-control-sm mb-3" id="spot-modal-instances" value="1"
+                        min="1" max="1000">
+                    <div id="spot-modal-loading" class="text-center d-none">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        <span class="ms-2 small">Fetching score…</span>
                     </div>
-
-                    <!-- Results -->
-                    <div id="strategy-results" class="d-none mt-3">
-                        <!-- Summary cards -->
-                        <div class="row g-3 mb-3" id="strategy-summary-cards"></div>
-
-                        <!-- Business explanation -->
-                        <div class="card mb-3">
-                            <div class="card-header"><i class="bi bi-briefcase"></i> Business View</div>
-                            <div class="card-body" id="strategy-business"></div>
-                        </div>
-
-                        <!-- Technical details -->
-                        <div class="accordion" id="strategy-tech-accordion">
-                            <div class="accordion-item">
-                                <h2 class="accordion-header">
-                                    <button class="accordion-button collapsed" type="button"
-                                            data-bs-toggle="collapse" data-bs-target="#strategy-tech-body">
-                                        <i class="bi bi-gear me-2"></i> Technical Details
-                                    </button>
-                                </h2>
-                                <div id="strategy-tech-body" class="accordion-collapse collapse">
-                                    <div class="accordion-body" id="strategy-technical"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Warnings -->
-                        <div id="strategy-warnings" class="mt-3"></div>
-
-                        <!-- Disclaimer -->
-                        <div class="alert alert-secondary mt-3 small" role="alert">
-                            <i class="bi bi-info-circle"></i>
-                            This tool is not affiliated with Microsoft.
-                            All capacity, pricing and latency information are indicative
-                            and not a guarantee of deployment success.
-                        </div>
-                    </div>
+                    <div id="spot-modal-result" class="d-none"></div>
                 </div>
-            </div>
-        </div>
-
-    </div><!-- /tab-content -->
-</div><!-- /container -->
-
-<!-- ===== Footer ===== -->
-<footer class="border-top py-2 text-center small text-body-secondary mt-auto">
-    <span>v{{ version }}</span> ·
-    <span>MIT License</span> ·
-    <span>Independent Azure analysis tool — not affiliated with Microsoft.</span>
-</footer>
-
-<!-- ===== Spot Score Modal ===== -->
-<div class="modal fade" id="spotModal" tabindex="-1" aria-labelledby="spotModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="spotModalLabel">Spot Placement Score</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="fw-semibold mb-2" id="spot-modal-sku"></p>
-                <label for="spot-modal-instances" class="form-label small">Number of instances:</label>
-                <input type="number" class="form-control form-control-sm mb-3" id="spot-modal-instances" value="1" min="1" max="1000">
-                <div id="spot-modal-loading" class="text-center d-none">
-                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-                    <span class="ms-2 small">Fetching score…</span>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="confirmSpotScore()">Get Score</button>
                 </div>
-                <div id="spot-modal-result" class="d-none"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary btn-sm" onclick="confirmSpotScore()">Get Score</button>
             </div>
         </div>
     </div>
-</div>
 
-<!-- ===== Pricing Detail Modal ===== -->
-<div class="modal fade" id="pricingModal" tabindex="-1" aria-labelledby="pricingModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="pricingModalLabel">SKU Detail — <span id="pricing-modal-sku"></span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div id="pricing-modal-loading" class="text-center d-none">
-                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-                    <span class="ms-2 small">Fetching prices…</span>
+    <!-- ===== Pricing Detail Modal ===== -->
+    <div class="modal modal-blur fade" id="pricingModal" tabindex="-1" aria-labelledby="pricingModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pricingModalLabel">SKU Detail — <span id="pricing-modal-sku"></span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div id="pricing-modal-content" class="d-none"></div>
+                <div class="modal-body">
+                    <div id="pricing-modal-loading" class="text-center d-none">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        <span class="ms-2 small">Fetching prices…</span>
+                    </div>
+                    <div id="pricing-modal-content" class="d-none"></div>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-{% if chat_enabled %}
-<!-- ===== AI Chat Panel ===== -->
-<button type="button" class="chat-fab" id="chat-fab" onclick="toggleChatPanel()" title="AI Chat Assistant">
-    <i class="bi bi-chat-dots-fill"></i>
-</button>
+    {% if chat_enabled %}
+    <!-- ===== AI Chat Panel ===== -->
+    <button type="button" class="chat-fab" id="chat-fab" onclick="toggleChatPanel()" title="AI Chat Assistant">
+        <i class="ti ti-message-chatbot-filled"></i>
+    </button>
 
-<div class="chat-panel d-none" id="chat-panel">
-    <div class="chat-resize-handle" id="chat-resize-handle" title="Drag to resize"></div>
-    <div class="chat-panel-header">
-        <span class="d-flex align-items-center gap-2">
-            <i class="bi bi-robot"></i>
-            <div class="chat-mode-toggle" id="chat-mode-toggle">
-                <button type="button" class="active" data-mode="discussion" onclick="switchChatMode('discussion')">Discussion</button>
-                <button type="button" data-mode="planner" onclick="switchChatMode('planner')">Planner</button>
-            </div>
-        </span>
-        <div class="d-flex gap-1">
-            <button type="button" class="btn btn-sm btn-link chat-header-btn" id="chat-pin-btn"
+    <div class="chat-panel d-none" id="chat-panel">
+        <div class="chat-resize-handle" id="chat-resize-handle" title="Drag to resize"></div>
+        <div class="chat-panel-header">
+            <span class="d-flex align-items-center gap-2">
+                <i class="ti ti-robot"></i>
+                <div class="chat-mode-toggle" id="chat-mode-toggle">
+                    <button type="button" class="active" data-mode="discussion"
+                        onclick="switchChatMode('discussion')">Discussion
+                    </button>
+                    <button type="button" data-mode="planner" onclick="switchChatMode('planner')">Planner</button>
+                </div>
+            </span>
+            <div class="d-flex gap-1">
+                <button type="button" class="btn btn-sm btn-link chat-header-btn" id="chat-pin-btn"
                     onclick="toggleChatPin()" title="Pin chat to side" data-tooltip="Pin chat to side">
-                <i class="bi bi-pin-angle"></i>
-            </button>
-            <button type="button" class="btn btn-sm btn-link chat-header-btn" id="chat-persist-btn"
-                    onclick="toggleChatPersist()" title="Save conversation to local storage" data-tooltip="Save conversation history">
-                <i class="bi bi-clock-history"></i>
-            </button>
-            <button type="button" class="btn btn-sm btn-link chat-header-btn" onclick="clearChat()" data-tooltip="Clear conversation">
-                <i class="bi bi-trash3"></i>
-            </button>
-            <button type="button" class="btn btn-sm btn-link chat-header-btn" onclick="toggleChatPanel()" data-tooltip="Close chat">
-                <i class="bi bi-x-lg"></i>
-            </button>
+                    <i class="ti ti-pin"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-link chat-header-btn" id="chat-persist-btn"
+                    onclick="toggleChatPersist()" title="Save conversation to local storage"
+                    data-tooltip="Save conversation history">
+                    <i class="ti ti-history"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-link chat-header-btn" onclick="clearChat()"
+                    data-tooltip="Clear conversation">
+                    <i class="ti ti-trash"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-link chat-header-btn" onclick="toggleChatPanel()"
+                    data-tooltip="Close chat">
+                    <i class="ti ti-x"></i>
+                </button>
+            </div>
+        </div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input-area">
+            <div class="input-group">
+                <textarea class="form-control" id="chat-input" placeholder="Ask about Azure SKUs, zones, pricing…"
+                    rows="1" onkeydown="handleChatKeydown(event)"></textarea>
+                <button type="button" class="btn btn-primary" id="chat-send-btn" onclick="sendChatMessage()"
+                    title="Send">
+                    <i class="ti ti-send"></i>
+                </button>
+            </div>
         </div>
     </div>
-    <div class="chat-messages" id="chat-messages"></div>
-    <div class="chat-input-area">
-        <div class="input-group">
-            <textarea class="form-control" id="chat-input" placeholder="Ask about Azure SKUs, zones, pricing…"
-                      rows="1" onkeydown="handleChatKeydown(event)"></textarea>
-            <button type="button" class="btn btn-primary" id="chat-send-btn" onclick="sendChatMessage()" title="Send">
-                <i class="bi bi-send-fill"></i>
-            </button>
-        </div>
-    </div>
-</div>
-{% endif %}
+    {% endif %}
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/simple-datatables@9/dist/umd/simple-datatables.js"></script>
-<script src="{{ url_for('static', path='js/app.js') }}"></script>
+    <!-- Tabler Core JS (includes Bootstrap 5) -->
+    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9/dist/umd/simple-datatables.js"></script>
+    <script src="{{ url_for('static', path='js/app.js') }}"></script>
 </body>
+
 </html>

@@ -1,5 +1,5 @@
 /* ===================================================================
-   Azure Scout – Frontend Logic  (Bootstrap 5 rewrite)
+   Azure Scout – Frontend Logic  (Tabler UI)
    =================================================================== */
 
 // ---------------------------------------------------------------------------
@@ -80,7 +80,7 @@ function _bestSpotLabel(zoneScores) {
 }
 
 // ---------------------------------------------------------------------------
-// Theme management  (Bootstrap uses data-bs-theme)
+// Theme management  (Tabler/Bootstrap uses data-bs-theme)
 // ---------------------------------------------------------------------------
 function getEffectiveTheme() {
     const stored = localStorage.getItem("theme");
@@ -147,7 +147,7 @@ async function init() {
     const tabEl = document.querySelector('#mainTabs');
     if (tabEl) {
         tabEl.addEventListener('shown.bs.tab', (e) => {
-            const target = e.target.getAttribute('data-bs-target');
+            const target = e.target.getAttribute('href') || e.target.getAttribute('data-bs-target');
             const hashMap = { '#tab-planner': '#planner', '#tab-strategy': '#strategy' };
             window.history.replaceState(null, '', hashMap[target] || '#topology');
         });
@@ -1011,7 +1011,7 @@ function resetPlannerResults() {
     plannerZoneMappings = null;
     _skuFilterState = {};
     if (_skuDataTable) {
-        try { _skuDataTable.destroy(); } catch {}
+        try { _skuDataTable.destroy(); } catch { }
         _skuDataTable = null;
     }
     showPanel("planner", "empty");
@@ -1343,7 +1343,7 @@ function renderPricingDetail(data, openAccordionIds) {
     html += '<div class="accordion-item">';
     html += '<h2 class="accordion-header">';
     html += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#pricingCollapsePanel" aria-expanded="false" aria-controls="pricingCollapsePanel">';
-    html += '<i class="bi bi-currency-exchange me-2"></i>Pricing';
+    html += '<i class="ti ti-currency-dollar me-2"></i>Pricing';
     html += '</button></h2>';
     html += '<div id="pricingCollapsePanel" class="accordion-collapse collapse" data-bs-parent="#pricingAccordion">';
     html += '<div class="accordion-body p-2">';
@@ -1523,7 +1523,7 @@ function renderZoneAvailability(profile, confidence) {
         bodyHtml += row("Status", '<span class="vm-badge vm-badge-unknown">No data</span>');
         bodyHtml += '<div class="vm-profile-row"><div class="d-flex align-items-center gap-2 w-100">';
         bodyHtml += '<input type="number" id="spot-panel-instances" class="form-control form-control-sm" value="1" min="1" max="1000" style="width:70px;" title="Instance count">';
-        bodyHtml += '<button class="btn btn-sm btn-outline-primary flex-grow-1" onclick="fetchSpotFromPanel()"><i class="bi bi-lightning-charge me-1"></i>Fetch Spot Scores</button>';
+        bodyHtml += '<button class="btn btn-sm btn-outline-primary flex-grow-1" onclick="fetchSpotFromPanel()"><i class="ti ti-bolt me-1"></i>Fetch Spot Scores</button>';
         bodyHtml += '</div></div>';
     } else {
         const bestLabel = _bestSpotLabel(spotZoneScores);
@@ -1535,7 +1535,7 @@ function renderZoneAvailability(profile, confidence) {
             if (s) {
                 const key = s.toLowerCase();
                 const isBest = key === (bestLabel || "").toLowerCase() && ["high", "medium", "low"].includes(key);
-                const star = isBest ? ' <i class="bi bi-star-fill text-warning" data-bs-toggle="tooltip" data-bs-title="Best eviction rate \u2014 used for confidence score"></i>' : "";
+                const star = isBest ? ' <i class="ti ti-star-filled text-warning" data-bs-toggle="tooltip" data-bs-title="Best eviction rate \u2014 used for confidence score"></i>' : "";
                 bodyHtml += `<div class="vm-profile-row"><span class="vm-profile-label"${pzTip}>${escapeHtml(zLabel)}</span><span>${spotBadgeHtml(s)}${star}</span></div>`;
             } else {
                 bodyHtml += `<div class="vm-profile-row"><span class="vm-profile-label"${pzTip}>${escapeHtml(zLabel)}</span><span class="vm-badge vm-badge-unknown">\u2014</span></div>`;
@@ -1576,7 +1576,7 @@ function renderZoneAvailability(profile, confidence) {
     html += '<div class="accordion-item">';
     html += '<h2 class="accordion-header">';
     html += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#zoneCollapsePanel" aria-expanded="false" aria-controls="zoneCollapsePanel">';
-    html += '<i class="bi bi-pin-map me-2"></i>Zone Availability';
+    html += '<i class="ti ti-map-pin me-2"></i>Zone Availability';
     html += '</button></h2>';
     html += '<div id="zoneCollapsePanel" class="accordion-collapse collapse" data-bs-parent="#zoneAccordion">';
     html += '<div class="accordion-body p-2">';
@@ -1651,7 +1651,7 @@ function renderQuotaPanel(quota, vcpus, confidence) {
     html += '<div class="accordion-item">';
     html += '<h2 class="accordion-header">';
     html += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#quotaCollapsePanel" aria-expanded="false" aria-controls="quotaCollapsePanel">';
-    html += '<i class="bi bi-speedometer me-2"></i>Quota';
+    html += '<i class="ti ti-gauge me-2"></i>Quota';
     html += '</button></h2>';
     html += '<div id="quotaCollapsePanel" class="accordion-collapse collapse" data-bs-parent="#quotaAccordion">';
     html += '<div class="accordion-body p-2">';
@@ -1663,7 +1663,7 @@ function renderQuotaPanel(quota, vcpus, confidence) {
 function renderConfidenceBreakdown(conf) {
     const lbl = (conf.label || "").toLowerCase().replace(/\s+/g, "-");
     let html = '<div class="confidence-section">';
-    html += `<h4 class="confidence-title">Deployment Confidence <span class="confidence-badge confidence-${lbl}">${conf.score} ${escapeHtml(conf.label || "")}</span> <i class="bi bi-info-circle text-body-secondary confidence-info-icon" data-bs-toggle="tooltip" data-bs-title="Composite score (0\u2013100) predicting deployment success based on weighted signals. Higher is better. Scoring version: ${escapeHtml(conf.scoringVersion || '')}"></i></h4>`;
+    html += `<h4 class="confidence-title">Deployment Confidence <span class="confidence-badge confidence-${lbl}">${conf.score} ${escapeHtml(conf.label || "")}</span> <i class="ti ti-info-circle text-body-secondary confidence-info-icon" data-bs-toggle="tooltip" data-bs-title="Composite score (0\u2013100) predicting deployment success based on weighted signals. Higher is better. Scoring version: ${escapeHtml(conf.scoringVersion || '')}"></i></h4>`;
     const components = conf.breakdown?.components || conf.breakdown || [];
     const usedComponents = components.filter(c => c.status === "used");
     if (usedComponents.length) {
@@ -1681,7 +1681,7 @@ function renderConfidenceBreakdown(conf) {
             const desc = signalDescriptions[name] || "";
             const score = b.score100 != null ? b.score100 : b.score;
             const contribution = b.contribution != null ? (b.contribution * 100).toFixed(1) : "0.0";
-            html += `<tr><td>${escapeHtml(signalLabels[name] || name)} <i class="bi bi-info-circle text-body-secondary" data-bs-toggle="tooltip" data-bs-title="${escapeHtml(desc)}"></i></td><td>${score}</td><td>${(b.weight * 100).toFixed(1)}%</td><td>${contribution}</td></tr>`;
+            html += `<tr><td>${escapeHtml(signalLabels[name] || name)} <i class="ti ti-info-circle text-body-secondary" data-bs-toggle="tooltip" data-bs-title="${escapeHtml(desc)}"></i></td><td>${score}</td><td>${(b.weight * 100).toFixed(1)}%</td><td>${contribution}</td></tr>`;
         });
         html += '</tbody></table>';
     }
@@ -1689,7 +1689,7 @@ function renderConfidenceBreakdown(conf) {
     if (missingSignals.length) {
         const signalLabels = { quota: "Quota Headroom", spot: "Spot Placement", zones: "Zone Breadth", restrictions: "Restrictions", pricePressure: "Price Pressure" };
         const names = missingSignals.map(m => signalLabels[m] || m).join(", ");
-        html += `<p class="confidence-missing"><i class="bi bi-exclamation-circle"></i> Missing signals (excluded from score): ${escapeHtml(names)}</p>`;
+        html += `<p class="confidence-missing"><i class="ti ti-alert-circle"></i> Missing signals (excluded from score): ${escapeHtml(names)}</p>`;
     }
     if (conf.disclaimers?.length) {
         html += '<p class="confidence-disclaimer text-body-secondary small fst-italic mt-1 mb-0">' + escapeHtml(conf.disclaimers[0]) + '</p>';
@@ -1744,7 +1744,7 @@ function renderAdmissionIntelligence(admData) {
     }
 
     if (ac.missingInputs?.length) {
-        html += `<div class="confidence-missing mt-2"><i class="bi bi-exclamation-triangle me-1"></i>Missing: ${ac.missingInputs.map(m => escapeHtml(m)).join(", ")}</div>`;
+        html += `<div class="confidence-missing mt-2"><i class="ti ti-alert-triangle me-1"></i>Missing: ${ac.missingInputs.map(m => escapeHtml(m)).join(", ")}</div>`;
     }
     html += '</div>';
 
@@ -1773,13 +1773,13 @@ function renderAdmissionIntelligence(admData) {
 
     html += '</div>'; // .admission-grid
 
-    html += '<div class="admission-disclaimer mt-2"><i class="bi bi-info-circle me-1"></i>Estimated signals derived from public APIs and collected history. Not a deployment guarantee.</div>';
+    html += '<div class="admission-disclaimer mt-2"><i class="ti ti-info-circle me-1"></i>Estimated signals derived from public APIs and collected history. Not a deployment guarantee.</div>';
 
     html += '<div class="accordion mt-2" id="admissionAccordion">';
     html += '<div class="accordion-item">';
     html += '<h2 class="accordion-header">';
     html += '<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#admissionJsonPanel" aria-expanded="false" aria-controls="admissionJsonPanel">';
-    html += '<i class="bi bi-code-slash me-2"></i>Breakdown JSON';
+    html += '<i class="ti ti-code me-2"></i>Breakdown JSON';
     html += '</button></h2>';
     html += '<div id="admissionJsonPanel" class="accordion-collapse collapse" data-bs-parent="#admissionAccordion">';
     html += `<div class="accordion-body p-2"><pre class="mb-0 small" style="max-height:300px;overflow:auto">${escapeHtml(JSON.stringify(admData, null, 2))}</pre></div>`;
@@ -1854,7 +1854,7 @@ function renderRegionSummary(skus) {
     const consistencyIcons = { high: "bi-symmetry-vertical", medium: "bi-distribute-horizontal", low: "bi-exclude", "very-low": "bi-exclude" };
 
     let html = '<div class="region-summary-bar">';
-    html += `<div class="region-summary-title"><i class="bi bi-geo-alt-fill"></i> ${escapeHtml(regionName)}</div>`;
+    html += `<div class="region-summary-title"><i class="ti ti-map-pin-filled"></i> ${escapeHtml(regionName)}</div>`;
     html += '<div class="region-summary-scores">';
 
     // Region Readiness card
@@ -1905,7 +1905,7 @@ function renderSkuTable(skus) {
     _saveSkuFilters();
 
     if (_skuDataTable) {
-        try { _skuDataTable.destroy(); } catch {}
+        try { _skuDataTable.destroy(); } catch { }
         _skuDataTable = null;
     }
 
@@ -2003,9 +2003,9 @@ function renderSkuTable(skus) {
         allLogicalZones.forEach(lz => {
             const isRestricted = sku.restrictions.includes(lz);
             const isAvailable = sku.zones.includes(lz);
-            if (isRestricted) html += '<td class="zone-restricted" data-bs-toggle="tooltip" data-bs-title="Restricted: this SKU has deployment restrictions in this zone"><i class="bi bi-exclamation-triangle-fill"></i></td>';
-            else if (isAvailable) html += '<td class="zone-available" data-bs-toggle="tooltip" data-bs-title="Available: this SKU can be deployed in this zone"><i class="bi bi-check-circle-fill"></i></td>';
-            else html += '<td class="zone-unavailable" data-bs-toggle="tooltip" data-bs-title="Not available: this SKU is not offered in this zone"><i class="bi bi-dash-circle"></i></td>';
+            if (isRestricted) html += '<td class="zone-restricted" data-bs-toggle="tooltip" data-bs-title="Restricted: this SKU has deployment restrictions in this zone"><i class="ti ti-alert-triangle-filled"></i></td>';
+            else if (isAvailable) html += '<td class="zone-available" data-bs-toggle="tooltip" data-bs-title="Available: this SKU can be deployed in this zone"><i class="ti ti-circle-check-filled"></i></td>';
+            else html += '<td class="zone-unavailable" data-bs-toggle="tooltip" data-bs-title="Not available: this SKU is not offered in this zone"><i class="ti ti-circle-minus"></i></td>';
         });
         html += "</tr>";
     });
@@ -2216,7 +2216,7 @@ function toggleTableColumns() {
     try {
         localStorage.setItem("azm-show-prices", document.getElementById("planner-show-prices")?.checked ? "1" : "0");
         localStorage.setItem("azm-show-spot", document.getElementById("planner-show-spot")?.checked ? "1" : "0");
-    } catch {}
+    } catch { }
     if (lastSkuData) renderSkuTable(lastSkuData);
 }
 
@@ -2232,7 +2232,7 @@ function _restoreColumnPrefs() {
             const el = document.getElementById("planner-show-spot");
             if (el) el.checked = spot === "1";
         }
-    } catch {}
+    } catch { }
 }
 
 // ---------------------------------------------------------------------------
@@ -2292,7 +2292,7 @@ const _CHAT_MODE_KEY = "azm-chat-mode";
 // Per-mode conversation state: { discussion: {messages, inputHistory}, planner: {messages, inputHistory} }
 const _chatModeState = {
     discussion: { messages: [], inputHistory: [] },
-    planner:   { messages: [], inputHistory: [] },
+    planner: { messages: [], inputHistory: [] },
 };
 
 
@@ -2334,7 +2334,7 @@ function switchChatMode(mode) {
 
     // Switch
     _chatMode = mode;
-    try { localStorage.setItem(_CHAT_MODE_KEY, mode); } catch {}
+    try { localStorage.setItem(_CHAT_MODE_KEY, mode); } catch { }
 
     // Update toggle UI
     document.querySelectorAll("#chat-mode-toggle button").forEach(btn => {
@@ -2389,7 +2389,7 @@ function _setChatPinned(pinned) {
         btn.dataset.tooltip = _chatPinned ? "Unpin" : "Pin";
         const icon = btn.querySelector("i");
         if (icon) {
-            icon.className = _chatPinned ? "bi bi-pin-fill" : "bi bi-pin-angle";
+            icon.className = _chatPinned ? "ti ti-pin-filled" : "ti ti-pin";
         }
     }
     // Adjust textarea rows for pinned mode
@@ -2429,7 +2429,7 @@ function toggleChatPersist() {
             localStorage.removeItem(_CHAT_STORAGE_KEY);
             localStorage.removeItem(_CHAT_INPUT_HIST_KEY);
         }
-    } catch {}
+    } catch { }
 }
 
 function _saveChatHistory() {
@@ -2441,7 +2441,7 @@ function _saveChatHistory() {
         localStorage.setItem(_CHAT_STORAGE_KEY, JSON.stringify(_chatModeState));
         localStorage.setItem(_CHAT_INPUT_HIST_KEY, JSON.stringify(_chatInputHistory));
         localStorage.setItem(_CHAT_MODE_KEY, _chatMode);
-    } catch {}
+    } catch { }
 }
 
 function _restoreChatHistory() {
@@ -2508,7 +2508,7 @@ function _restoreChatHistory() {
                 ? "Describe your deployment needs…"
                 : "Ask about Azure SKUs, zones, pricing…";
         }
-    } catch {}
+    } catch { }
 }
 
 function clearChat() {
@@ -2748,7 +2748,7 @@ function _appendToolStatus(bubble, toolName, status, argsJson) {
     badge.className = "chat-tool-badge calling";
     badge.dataset.tool = toolName;
     const friendlyName = toolName.replace(/_/g, " ");
-    badge.innerHTML = `<i class="bi bi-gear-fill spin"></i> ${escapeHtml(friendlyName)}`;
+    badge.innerHTML = `<i class="ti ti-settings-filled spin"></i> ${escapeHtml(friendlyName)}`;
     // Store arguments for tooltip
     if (argsJson) {
         try {
@@ -2768,7 +2768,7 @@ function _updateToolStatus(bubble, toolName, status) {
     if (badge) {
         badge.className = `chat-tool-badge ${status}`;
         const friendlyName = toolName.replace(/_/g, " ");
-        badge.innerHTML = `<i class="bi bi-check-circle-fill"></i> ${escapeHtml(friendlyName)}`;
+        badge.innerHTML = `<i class="ti ti-circle-check-filled"></i> ${escapeHtml(friendlyName)}`;
     }
 }
 
@@ -3144,7 +3144,7 @@ function renderStrategyResults(data) {
     const allWarnings = [...(data.warnings || []), ...(data.missingInputs || [])];
     if (allWarnings.length) {
         warnEl.innerHTML = allWarnings.map(w =>
-            `<div class="alert alert-warning alert-sm py-1 px-2 mb-1"><i class="bi bi-exclamation-triangle"></i> ${escapeHtml(w)}</div>`
+            `<div class="alert alert-warning alert-sm py-1 px-2 mb-1"><i class="ti ti-alert-triangle"></i> ${escapeHtml(w)}</div>`
         ).join("");
     } else {
         warnEl.innerHTML = "";
@@ -3223,7 +3223,7 @@ function renderStrategyResults(data) {
                 localStorage.setItem("azm-chat-w", panel.style.width);
                 localStorage.setItem("azm-chat-h", panel.style.height);
                 if (_chatPinned) _syncPinnedWidth();
-            } catch {}
+            } catch { }
         }
     }
 
@@ -3236,5 +3236,5 @@ function renderStrategyResults(data) {
             if (w) panel.style.width = w;
             if (h) panel.style.height = h;
         }
-    } catch {}
+    } catch { }
 })();
